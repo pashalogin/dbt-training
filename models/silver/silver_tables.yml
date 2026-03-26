@@ -1,0 +1,119 @@
+version: 2
+
+models:
+  - name: silver_airports
+    description: "{{ doc('silver_airports') }}"
+    columns:
+      - name: airport_ident
+        description: Unique ICAO/FAA identifier for the airport
+        tests:
+          - unique
+          - not_null
+      - name: airport_type
+        description: Classification of the airport facility
+        tests:
+          - not_null
+          - accepted_values:
+              values:
+                - small_airport
+                - medium_airport
+                - large_airport
+                - heliport
+                - seaplane_base
+                - balloonport
+                - closed
+      - name: airport_name
+        description: Full name of the airport
+        tests:
+          - not_null
+      - name: airport_lat
+        description: Latitude coordinate in decimal degrees
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -90
+              max_value: 90
+      - name: airport_long
+        description: Longitude coordinate in decimal degrees
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: -180
+              max_value: 180
+      - name: continent
+        description: Continent code where the airport is located
+      - name: iso_country
+        description: ISO 3166-1 alpha-2 country code
+      - name: iso_region
+        description: ISO 3166-2 region code
+
+  - name: silver_runways
+    description: "{{ doc('silver_runways') }}"
+    columns:
+      - name: runway_id
+        description: Unique identifier for the runway record
+        tests:
+          - unique
+          - not_null
+      - name: airport_ident
+        description: Foreign key to silver_airports
+        tests:
+          - not_null
+          - relationships:
+              to: ref('silver_airports')
+              field: airport_ident
+              severity: warn
+      - name: runway_length_ft
+        description: Length of the runway in feet
+        tests:
+          - dbt_expectations.expect_column_values_to_be_between:
+              min_value: 0
+              max_value: 20000
+              row_condition: "runway_length_ft is not null"
+      - name: runway_width_ft
+        description: Width of the runway in feet
+      - name: runway_surface
+        description: Surface material; null/empty values replaced with __UNKNOWN__
+        tests:
+          - not_null
+      - name: runway_lighted
+        description: Boolean flag indicating if the runway has lighting
+      - name: runway_closed
+        description: Boolean flag indicating if the runway is closed
+
+  - name: silver_airport_comments
+    description: "{{ doc('silver_airport_comments') }}"
+    columns:
+      - name: comment_id
+        description: Unique identifier for the comment
+        tests:
+          - unique
+          - not_null
+      - name: airport_ident
+        description: Foreign key to silver_airports
+        tests:
+          - not_null
+          - relationships:
+              to: ref('silver_airports')
+              field: airport_ident
+              severity: warn
+      - name: comment_timestamp
+        description: Timestamp when the comment was submitted
+        tests:
+          - not_null
+      - name: member_nickname
+        description: Display name of the commenter; null values replaced with __UNKNOWN__
+        tests:
+          - not_null
+      - name: comment_subject
+        description: Subject line of the comment
+      - name: comment_body
+        description: Full text body of the comment; empty/null records are filtered out
+        tests:
+          - not_null
+          - dbt_expectations.expect_column_value_lengths_to_be_between:
+              min_value: 1
+      - name: loaded_at
+        description: Timestamp when the record was loaded into the silver layer
+        tests:
+          - not_null
