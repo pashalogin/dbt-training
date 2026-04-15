@@ -28,3 +28,4 @@ where
 {% if is_incremental() %}
     and comment_id > (select max(comment_id) from {{ this }})
 {% endif %}
+-- test changes
