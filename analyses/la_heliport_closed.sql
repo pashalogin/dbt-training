@@ -1,7 +1,7 @@
 -- Validate that the SCD snapshot captured the closure of
 -- Los Angeles County Sheriff's Department Heliport (01CN).
 -- Run with: dbt show --select la_heliport_closed
-
+-- This is test
 select
     airport_ident,
     airport_name,
